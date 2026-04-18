@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>sign. by cicely</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+<style>
+:root{
+  --ink:#0F0D0B;--ink-mid:#3D3530;--ink-light:#8A7A72;
+  --paper:#FAF7F2;--paper-dark:#F0EBE3;--paper-mid:#E8E0D5;
+  --tc:#C4623A;--tc-light:#E8907A;--tc-pale:#F5DDD5;
+  --sage:#7A9E7E;--sage-pale:#E8F0E8;
+  --card:#FFFEFB;
+  --radius:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Geist',sans-serif;background:var(--paper);color:var(--ink);min-height:100vh;overflow-x:hidden;}
+
+.screen{display:none;min-height:100vh;animation:fadeUp .3s ease;}
+.screen.active{display:flex;flex-direction:column;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+.wordmark{font-family:'Instrument Serif',serif;font-size:38px;color:var(--ink);padding:36px 0 4px;letter-spacing:-.02em;line-height:1;}
+.wordmark span{color:var(--tc);font-style:italic;}
+.tagline{font-size:13px;color:var(--ink-light);margin-bottom:32px;line-height:1.5;}
+
+/* ── WHO SCREEN ── */
+#who{padding:0 24px 80px;align-items:flex-start;}
+.people-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;width:100%;}
+.person-tile{background:var(--card);border:1.5px solid var(--paper-mid);border-radius:16px;padding:20px 16px;cursor:pointer;transition:all .2s;text-align:left;}
+.person-tile:hover{border-color:var(--tc);background:var(--tc-pale);}
+.person-tile:active{transform:scale(.97);}
+.person-initial{width:40px;height:40px;border-radius:50%;background:var(--paper-dark);display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:18px;color:var(--ink-mid);margin-bottom:10px;}
+.person-name-tile{font-size:15px;font-weight:500;color:var(--ink);margin-bottom:2px;}
+.person-role{font-size:12px;color:var(--ink-light);}
+.person-tile.has-sig .person-initial{background:var(--sage-pale);color:var(--sage);}
+
+.setup-link{font-size:13px;color:var(--ink-light);margin-top:24px;cursor:pointer;text-decoration:underline;text-underline-offset:3px;text-align:center;align-self:center;}
+
+/* ── SETUP SIG SCREEN ── */
+#setup{padding:0 24px 80px;align-items:flex-start;}
+.section-label{font-size:10px;color:var(--ink-light);text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px;margin-top:22px;}
+.tab-row{display:flex;gap:6px;margin-bottom:16px;}
+.tab{padding:7px 16px;border-radius:20px;border:1.5px solid var(--paper-mid);font-size:13px;color:var(--ink-mid);cursor:pointer;background:var(--card);transition:all .2s;}
+.tab.active{background:var(--tc-pale);border-color:var(--tc);color:var(--tc);}
+#draw-pad{border:1.5px solid var(--paper-mid);border-radius:var(--radius);background:var(--card);cursor:crosshair;display:block;width:100%;touch-action:none;}
+.upload-zone{border:1.5px dashed var(--paper-mid);border-radius:var(--radius);background:var(--card);padding:40px 20px;text-align:center;cursor:pointer;transition:border-color .2s;}
+.upload-zone:hover{border-color:var(--tc);}
+.upload-zone p{font-size:13px;color:var(--ink-light);margin-top:8px;}
+.sig-preview{max-width:100%;border-radius:8px;margin-top:12px;border:1.5px solid var(--paper-mid);}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:var(--radius);padding:13px 20px;font-family:'Geist',sans-serif;font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;border:none;}
+.btn-primary{background:var(--ink);color:var(--paper);}
+.btn-primary:hover{background:var(--tc);}
+.btn-ghost{background:var(--card);color:var(--ink-mid);border:1.5px solid var(--paper-mid);}
+.btn-ghost:hover{border-color:var(--tc);color:var(--tc);}
+.btn:active{transform:scale(.97);}
+.btn-row{display:flex;gap:8px;margin-top:20px;width:100%;}
+.btn-row .btn{flex:1;}
+
+/* ── UPLOAD DOC SCREEN ── */
+#upload-doc{padding:0 24px 80px;align-items:flex-start;}
+.drop-zone{width:100%;border:1.5px dashed var(--paper-mid);border-radius:16px;background:var(--card);padding:56px 20px;text-align:center;cursor:pointer;transition:all .2s;position:relative;}
+.drop-zone:hover{border-color:var(--tc);background:var(--tc-pale);}
+.drop-zone.drag-over{border-color:var(--tc);background:var(--tc-pale);}
+.drop-icon{font-size:36px;margin-bottom:12px;display:block;}
+.drop-title{font-family:'Instrument Serif',serif;font-size:22px;color:var(--ink);margin-bottom:6px;}
+.drop-sub{font-size:13px;color:var(--ink-light);}
+.or-divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--ink-light);font-size:12px;}
+.or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:var(--paper-mid);}
+.recent-label{font-size:11px;color:var(--ink-light);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px;}
+.recent-item{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--card);border:1.5px solid var(--paper-mid);border-radius:12px;cursor:pointer;margin-bottom:8px;transition:border-color .2s;}
+.recent-item:hover{border-color:var(--tc);}
+.recent-icon{font-size:20px;}
+.recent-name{font-size:13px;color:var(--ink-mid);font-weight:500;}
+.recent-date{font-size:11px;color:var(--ink-light);}
+
+/* ── SIGN SCREEN ── */
+#sign{padding:0;flex-direction:column;}
+.sign-topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--paper-mid);background:var(--card);position:sticky;top:0;z-index:20;}
+.sign-topbar-left{display:flex;align-items:center;gap:10px;}
+.signer-badge{display:flex;align-items:center;gap:6px;background:var(--paper-dark);border-radius:20px;padding:5px 12px 5px 6px;}
+.signer-dot{width:24px;height:24px;border-radius:50%;background:var(--tc-pale);display:flex;align-items:center;justify-content:center;font-family:'Instrument Serif',serif;font-size:11px;color:var(--tc);}
+.signer-name-label{font-size:12px;color:var(--ink-mid);font-weight:500;}
+.doc-name-bar{font-size:12px;color:var(--ink-light);max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+
+.doc-viewport{flex:1;overflow-y:auto;padding:20px 16px 120px;display:flex;flex-direction:column;align-items:center;gap:16px;}
+.page-wrap{position:relative;box-shadow:0 4px 24px rgba(15,13,11,.12);border-radius:4px;overflow:hidden;cursor:crosshair;}
+.page-wrap canvas{display:block;}
+
+.placed-field{position:absolute;cursor:move;user-select:none;touch-action:none;min-width:60px;min-height:28px;}
+.placed-field .field-inner{position:absolute;inset:0;border-radius:6px;padding:4px 8px;font-family:'Geist',sans-serif;display:flex;align-items:center;overflow:hidden;}
+.placed-field.type-sig .field-inner{background:rgba(196,98,58,.08);border:1.5px dashed var(--tc);}
+.placed-field.type-date .field-inner{background:rgba(122,158,126,.08);border:1.5px dashed var(--sage);}
+.placed-field.type-name .field-inner{background:rgba(201,168,76,.08);border:1.5px dashed #C9A84C;}
+.placed-field .del-btn{position:absolute;top:-8px;right:-8px;width:18px;height:18px;background:var(--ink);color:white;border-radius:50%;font-size:10px;display:none;align-items:center;justify-content:center;cursor:pointer;line-height:1;border:none;z-index:2;}
+.placed-field:hover .del-btn,.placed-field.selected .del-btn{display:flex;}
+.field-sig-img{width:100%;height:100%;object-fit:contain;display:block;position:absolute;inset:0;}
+.resize-handle{position:absolute;bottom:-6px;right:-6px;width:14px;height:14px;background:var(--ink);border-radius:50%;cursor:se-resize;display:none;z-index:5;touch-action:none;}
+.placed-field:hover .resize-handle,.placed-field.selected .resize-handle{display:block;}
+.field-color-btn{position:absolute;top:-8px;left:-8px;width:18px;height:18px;background:var(--card);border:1.5px solid var(--paper-mid);border-radius:50%;font-size:9px;display:none;align-items:center;justify-content:center;cursor:pointer;line-height:1;z-index:2;}
+.placed-field:hover .field-color-btn,.placed-field.selected .field-color-btn{display:flex;}
+.color-picker-pop{position:absolute;top:-36px;left:0;background:var(--card);border:1.5px solid var(--paper-mid);border-radius:20px;padding:4px 8px;display:flex;gap:6px;z-index:10;box-shadow:0 2px 12px rgba(15,13,11,.1);}
+.color-swatch{width:16px;height:16px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:border-color .15s;}
+.color-swatch:hover{border-color:var(--ink);}
+.field-text-editable{background:transparent;border:none;outline:none;font-family:'Geist',sans-serif;width:100%;height:100%;cursor:text;word-break:break-word;white-space:pre-wrap;line-height:1.3;}
+
+/* floating side panel */
+.side-panel{position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:30;display:flex;flex-direction:column;gap:8px;align-items:flex-end;}
+.side-tool{display:flex;align-items:center;gap:8px;background:var(--card);border:1.5px solid var(--paper-mid);border-radius:20px;padding:8px 14px 8px 10px;font-size:12px;color:var(--ink-mid);cursor:pointer;transition:all .2s;white-space:nowrap;box-shadow:0 2px 12px rgba(15,13,11,.08);}
+.side-tool:hover{border-color:var(--tc);color:var(--tc);}
+.side-tool.active{background:var(--ink);border-color:var(--ink);color:white;}
+.side-tool-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.side-divider{width:100%;height:1px;background:var(--paper-mid);margin:2px 0;}
+.side-finish{background:var(--ink);color:var(--paper);border:none;border-radius:20px;padding:10px 16px;font-family:'Geist',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.side-finish:hover{background:var(--tc);}
+.side-finish:active{transform:scale(.97);}
+.side-back{background:var(--card);color:var(--ink-mid);border:1.5px solid var(--paper-mid);border-radius:20px;padding:8px 14px;font-family:'Geist',sans-serif;font-size:12px;cursor:pointer;transition:all .2s;white-space:nowrap;}
+.side-back:hover{border-color:var(--tc);color:var(--tc);}
+.sign-footer-bar{position:fixed;bottom:0;left:0;right:0;padding:12px 20px;background:var(--card);border-top:1px solid var(--paper-mid);display:flex;gap:10px;z-index:20;}
+.sign-footer-bar .side-finish{flex:1;text-align:center;border-radius:12px;}
+.sign-footer-bar .side-back{flex:0 0 auto;}
+
+/* ── DONE SCREEN ── */
+#done{padding:0;align-items:center;justify-content:flex-start;}
+.done-icon{font-family:'Instrument Serif',serif;font-size:56px;color:var(--sage);margin-bottom:12px;line-height:1;}
+.done-title{font-family:'Instrument Serif',serif;font-size:36px;color:var(--ink);margin-bottom:6px;}
+.done-sub{font-size:13px;color:var(--ink-light);margin-bottom:28px;line-height:1.6;}
+.done-actions{display:flex;flex-direction:column;gap:10px;width:100%;max-width:380px;}
+.notify-card{background:var(--card);border:1.5px solid var(--paper-mid);border-radius:14px;padding:16px;text-align:left;transition:border-color .2s;}
+.notify-card:hover{border-color:var(--tc);}
+.notify-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.notify-label{font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-light);margin-bottom:5px;}
+.notify-desc{font-size:12px;color:var(--ink-mid);line-height:1.5;}
+.notify-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+.notify-btn{flex-shrink:0;background:var(--ink);color:var(--paper);border:none;border-radius:20px;padding:8px 16px;font-family:'Geist',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s;white-space:nowrap;align-self:center;}
+.notify-btn:hover{background:var(--tc);}
+.notify-btn:disabled{background:var(--paper-mid);color:var(--ink-light);cursor:default;}
+.notify-status{font-size:12px;margin-top:10px;min-height:16px;transition:all .3s;}
+.notify-status.ok{color:var(--sage);}
+.notify-status.err{color:var(--tc);}
+
+/* ── TOAST ── */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:var(--paper);border-radius:20px;padding:10px 20px;font-size:13px;opacity:0;transition:all .3s;pointer-events:none;z-index:999;white-space:nowrap;}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+/* ── ADD PERSON MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,13,11,.4);z-index:50;display:none;align-items:flex-end;justify-content:center;}
+.modal-overlay.open{display:flex;animation:fadeIn .2s ease;}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal-sheet{background:var(--card);border-radius:20px 20px 0 0;padding:28px 24px 40px;width:100%;max-width:480px;animation:slideUp .25s ease;}
+@keyframes slideUp{from{transform:translateY(40px);opacity:0}to{transform:translateY(0);opacity:1}}
+.modal-title{font-family:'Instrument Serif',serif;font-size:22px;margin-bottom:6px;}
+.modal-sub{font-size:13px;color:var(--ink-light);margin-bottom:20px;}
+.field-input{width:100%;background:var(--paper);border:1.5px solid var(--paper-mid);border-radius:var(--radius);padding:13px 16px;font-family:'Geist',sans-serif;font-size:15px;color:var(--ink);outline:none;transition:border-color .2s;}
+.field-input:focus{border-color:var(--tc);}
+.modal-row{display:flex;gap:8px;margin-top:12px;}
+.modal-row .btn{flex:1;}
+</style>
+</head>
+<body>
+
+<!-- WHO ARE YOU -->
+<div class="screen active" id="who">
+  <div style="padding:0 24px;">
+    <div class="wordmark">sign<span>.</span></div>
+    <div class="tagline">by cicely — tap your name to get started</div>
+  </div>
+  <div style="padding:0 24px;width:100%;">
+    <div class="section-label">team</div>
+    <div class="people-grid" id="people-grid"></div>
+    <div class="setup-link" onclick="openSetupFlow()">+ add team member or update signature</div>
+  </div>
+</div>
+
+<!-- SIGNATURE SETUP -->
+<div class="screen" id="setup">
+  <div style="padding:0 24px;">
+    <div class="wordmark">sign<span>.</span></div>
+    <div class="tagline" id="setup-tagline">set up your signature</div>
+  </div>
+
+  <div style="padding:0 24px;width:100%;">
+    <div class="section-label">your name</div>
+    <input class="field-input" id="setup-name" placeholder="Full name" />
+
+    <div class="section-label" style="margin-top:18px;">your role</div>
+    <input class="field-input" id="setup-role" placeholder="e.g. CEO, COO, CTO…" />
+
+    <div class="section-label" style="margin-top:18px;">signature</div>
+    <div class="tab-row">
+      <div class="tab active" onclick="switchSigTab('draw')">Draw</div>
+      <div class="tab" onclick="switchSigTab('upload')">Upload image</div>
+    </div>
+
+    <div id="draw-tab">
+      <canvas id="draw-pad" height="140"></canvas>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button class="btn btn-ghost" style="flex:1;padding:9px;" onclick="clearPad()">Clear</button>
+      </div>
+    </div>
+
+    <div id="upload-tab" style="display:none;">
+      <div class="upload-zone" onclick="document.getElementById('sig-file').click()">
+        <div style="font-size:28px;">✍️</div>
+        <p>tap to upload signature image</p>
+        <p style="font-size:11px;margin-top:4px;">PNG or JPG with transparent background works best</p>
+      </div>
+      <input type="file" id="sig-file" accept="image/*" style="display:none" onchange="handleSigUpload(event)" />
+      <img id="sig-preview" class="sig-preview" style="display:none;" />
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" onclick="goTo('who')">Cancel</button>
+      <button class="btn btn-primary" onclick="savePerson()">Save & continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- UPLOAD DOCUMENT -->
+<div class="screen" id="upload-doc">
+  <div style="padding:0 24px;">
+    <div class="wordmark">sign<span>.</span></div>
+    <div class="tagline" id="upload-tagline">ready to sign</div>
+  </div>
+
+  <div style="padding:0 24px;width:100%;">
+    <div class="drop-zone" id="drop-zone" onclick="document.getElementById('pdf-file').click()"
+         ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
+      <span class="drop-icon">📄</span>
+      <div class="drop-title">upload a document</div>
+      <div class="drop-sub">PDF · tap or drag & drop</div>
+    </div>
+    <input type="file" id="pdf-file" accept="application/pdf" style="display:none" onchange="handlePDFUpload(event)" />
+
+    <div id="recent-section" style="margin-top:24px;display:none;">
+      <div class="recent-label">recent</div>
+      <div id="recent-list"></div>
+    </div>
+  </div>
+</div>
+
+<!-- SIGNING CANVAS -->
+<div class="screen" id="sign">
+  <div class="sign-topbar">
+    <div class="sign-topbar-left">
+      <div class="signer-badge">
+        <div class="signer-dot" id="topbar-initial">—</div>
+        <div class="signer-name-label" id="topbar-name">—</div>
+      </div>
+      <div class="doc-name-bar" id="doc-name-bar">document.pdf</div>
+    </div>
+    <button class="btn btn-ghost" style="padding:7px 14px;font-size:12px;" onclick="goTo('upload-doc')">← back</button>
+  </div>
+
+  <div class="doc-viewport" id="doc-viewport">
+    <div style="font-size:13px;color:var(--ink-light);padding:40px 0;">loading document…</div>
+  </div>
+
+  <div class="side-panel" id="side-panel">
+    <div class="side-tool active" onclick="setTool('sig')" id="tool-sig">
+      <div class="side-tool-dot" style="background:var(--tc);"></div>
+      signature
+    </div>
+    <div class="side-tool" onclick="setTool('date')" id="tool-date">
+      <div class="side-tool-dot" style="background:var(--sage);"></div>
+      date
+    </div>
+    <div class="side-tool" onclick="setTool('name')" id="tool-name">
+      <div class="side-tool-dot" style="background:#C9A84C;"></div>
+      full name
+    </div>
+  </div>
+
+  <div class="sign-footer-bar">
+    <button class="side-back" onclick="goTo('upload-doc')">discard</button>
+    <button class="side-finish" onclick="finishSigning()">finish & download ↓</button>
+  </div>
+</div>
+
+<!-- DONE -->
+<div class="screen" id="done">
+  <div style="padding:0 24px;width:100%;max-width:440px;margin:0 auto;display:flex;flex-direction:column;align-items:center;text-align:center;padding-top:80px;">
+    <div class="done-icon">✓</div>
+    <div class="done-title">signed.</div>
+    <div class="done-sub" id="done-sub">document signed and ready.</div>
+    <div class="done-actions">
+      <button class="btn btn-primary" onclick="downloadSigned()">download PDF ↓</button>
+
+      <div class="notify-card">
+        <div class="notify-card-top" style="display:block;">
+          <div>
+            <div class="notify-label">send signed copy</div>
+            <div class="notify-desc" id="notify-desc">Sends the signed PDF to <strong>hello@withcicely.com</strong> so the Cicely team has the completed document on file.</div>
+          </div>
+          <div class="notify-actions">
+            <button class="notify-btn" data-send-target="helloApp" onclick="sendSignedPackage('helloApp', this)">send to hello@withcicely.com</button>
+          </div>
+        </div>
+        <div class="notify-status" id="notify-status"></div>
+      </div>
+
+      <button class="btn btn-ghost" onclick="signAnother()">sign another document</button>
+      <button class="btn btn-ghost" onclick="goTo('who')">back to team</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal(event)"></div>
+
+<script>
+// ── PDF.js worker ──
+pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+
+// ── BACKEND CONFIG ──
+const SUPABASE_URL = 'https://jzywdherchckqoyibmsi.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imp6eXdkaGVyY2hja3FveWlibXNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4MDM1OTEsImV4cCI6MjA4ODM3OTU5MX0.gxcCnbi3rod2-aKcgMDgr8FoesiGb6MenkjGHKEPj-o';
+const SIGN_BACKEND_FUNCTION = 'send-sign-package';
+const DELIVERY_GROUPS = {
+  helloApp: {
+    label: 'hello app',
+    emails: ['hello@withcicely.com'],
+  },
+};
+
+// ── STATE ──
+let team = JSON.parse(localStorage.getItem('cicely_sign_team') || '[]');
+let currentUser = null;
+let currentTool = 'sig';
+let pdfBytes = null;
+let pdfDoc = null;
+let pdfName = '';
+let placedFields = []; // {page, x, y, type, id}
+let signedPdfBytes = null;
+let drawingPad = { drawing: false, ctx: null, lastX: 0, lastY: 0, strokes: [], currentStroke: null };
+let setupEditingIndex = null;
+
+// ── NAV ──
+function goTo(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if (id === 'done') updateNotifySummary();
+}
+
+// ── TEAM RENDER ──
+function renderTeam() {
+  const grid = document.getElementById('people-grid');
+  if (!team.length) {
+    grid.innerHTML = `<div style="grid-column:span 2;text-align:center;padding:40px 0;font-size:13px;color:var(--ink-light);">no team members yet — add one below</div>`;
+    return;
+  }
+  grid.innerHTML = team.map((p, i) => `
+    <div class="person-tile ${p.sig ? 'has-sig' : ''}" onclick="selectPerson(${i})">
+      <div class="person-initial">${p.name[0]}</div>
+      <div class="person-name-tile">${p.name}</div>
+      <div class="person-role">${p.role || 'team'}</div>
+    </div>`).join('');
+}
+
+function selectPerson(i) {
+  currentUser = team[i];
+  document.getElementById('topbar-initial').textContent = currentUser.name[0];
+  document.getElementById('topbar-name').textContent = currentUser.name;
+  document.getElementById('upload-tagline').textContent = `signing as ${currentUser.name}`;
+  goTo('upload-doc');
+  renderRecent();
+}
+
+// ── SETUP FLOW ──
+let sigTabMode = 'draw';
+
+function openSetupFlow(editIndex = null) {
+  setupEditingIndex = editIndex;
+  const p = editIndex !== null ? team[editIndex] : null;
+  document.getElementById('setup-name').value = p ? p.name : '';
+  document.getElementById('setup-role').value = p ? (p.role || '') : '';
+  document.getElementById('setup-tagline').textContent = p ? `update ${p.name}'s signature` : 'add a team member';
+  clearPad();
+  document.getElementById('sig-preview').style.display = 'none';
+  document.getElementById('sig-preview').src = '';
+  initDrawPad();
+  if (p && p.sig) {
+    loadSignatureIntoSetup(p.sig);
+  }
+  goTo('setup');
+}
+
+function switchSigTab(tab) {
+  sigTabMode = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+  document.getElementById('draw-tab').style.display = tab === 'draw' ? 'block' : 'none';
+  document.getElementById('upload-tab').style.display = tab === 'upload' ? 'block' : 'none';
+  if (tab === 'draw') initDrawPad();
+}
+
+function initDrawPad() {
+  const canvas = document.getElementById('draw-pad');
+  canvas.width = canvas.offsetWidth || 340;
+  canvas.height = 140;
+  const ctx = canvas.getContext('2d');
+  drawingPad.ctx = ctx;
+  configureSignatureContext(ctx);
+  redrawDrawPad();
+
+  function getPos(e) {
+    const r = canvas.getBoundingClientRect();
+    const src = e.touches ? e.touches[0] : e;
+    return { x: src.clientX - r.left, y: src.clientY - r.top };
+  }
+
+  canvas.onmousedown = canvas.ontouchstart = (e) => {
+    e.preventDefault();
+    drawingPad.drawing = true;
+    const p = getPos(e);
+    drawingPad.lastX = p.x;
+    drawingPad.lastY = p.y;
+    drawingPad.currentStroke = [p];
+    drawingPad.strokes.push(drawingPad.currentStroke);
+    ctx.beginPath(); ctx.moveTo(p.x, p.y);
+  };
+  canvas.onmousemove = canvas.ontouchmove = (e) => {
+    e.preventDefault();
+    if (!drawingPad.drawing) return;
+    const p = getPos(e);
+    drawingPad.currentStroke.push(p);
+    ctx.lineTo(p.x, p.y);
+    ctx.stroke();
+    drawingPad.lastX = p.x; drawingPad.lastY = p.y;
+  };
+  canvas.onmouseup = canvas.ontouchend = () => {
+    drawingPad.drawing = false;
+    drawingPad.currentStroke = null;
+  };
+}
+
+function clearPad() {
+  const c = document.getElementById('draw-pad');
+  const ctx = c.getContext('2d');
+  drawingPad.strokes = [];
+  drawingPad.currentStroke = null;
+  ctx.clearRect(0, 0, c.width, c.height);
+}
+
+function configureSignatureContext(ctx) {
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  ctx.strokeStyle = '#0F0D0B';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+}
+
+function redrawDrawPad() {
+  const canvas = document.getElementById('draw-pad');
+  const ctx = canvas.getContext('2d');
+  configureSignatureContext(ctx);
+  for (const stroke of drawingPad.strokes) {
+    if (!stroke.length) continue;
+    ctx.beginPath();
+    ctx.moveTo(stroke[0].x, stroke[0].y);
+    for (let i = 1; i < stroke.length; i++) {
+      ctx.lineTo(stroke[i].x, stroke[i].y);
+    }
+    if (stroke.length === 1) {
+      ctx.lineTo(stroke[0].x + 0.01, stroke[0].y + 0.01);
+    }
+    ctx.stroke();
+  }
+}
+
+function isVectorSignature(sig) {
+  return !!sig && typeof sig === 'object' && sig.kind === 'vector' && Array.isArray(sig.strokes);
+}
+
+function signatureToPreviewUrl(sig) {
+  if (!sig) return '';
+  if (typeof sig === 'string') return sig;
+  if (!isVectorSignature(sig)) return '';
+  const svg = signatureToSvg(sig);
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
+}
+
+function signatureToSvg(sig) {
+  const width = sig.width || 340;
+  const height = sig.height || 140;
+  const pathData = strokesToSvgPath(sig.strokes);
+  const strokeWidth = sig.lineWidth || 2;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}"><path d="${pathData}" fill="none" stroke="${sig.color || '#0F0D0B'}" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+}
+
+function strokesToSvgPath(strokes) {
+  return strokes.map(stroke => {
+    if (!stroke.length) return '';
+    const segments = [`M ${stroke[0].x} ${stroke[0].y}`];
+    for (let i = 1; i < stroke.length; i++) {
+      segments.push(`L ${stroke[i].x} ${stroke[i].y}`);
+    }
+    if (stroke.length === 1) {
+      segments.push(`L ${stroke[0].x + 0.01} ${stroke[0].y + 0.01}`);
+    }
+    return segments.join(' ');
+  }).join(' ');
+}
+
+function loadSignatureIntoSetup(sig) {
+  if (isVectorSignature(sig)) {
+    sigTabMode = 'draw';
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelector('.tab-row .tab').classList.add('active');
+    document.getElementById('draw-tab').style.display = 'block';
+    document.getElementById('upload-tab').style.display = 'none';
+    drawingPad.strokes = JSON.parse(JSON.stringify(sig.strokes));
+    redrawDrawPad();
+    return;
+  }
+
+  const previewUrl = signatureToPreviewUrl(sig);
+  if (previewUrl) {
+    sigTabMode = 'upload';
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-row .tab')[1].classList.add('active');
+    document.getElementById('draw-tab').style.display = 'none';
+    document.getElementById('upload-tab').style.display = 'block';
+    document.getElementById('sig-preview').src = previewUrl;
+    document.getElementById('sig-preview').style.display = 'block';
+  }
+}
+
+function handleSigUpload(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('sig-preview').src = ev.target.result;
+    document.getElementById('sig-preview').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+function savePerson() {
+  const name = document.getElementById('setup-name').value.trim();
+  const role = document.getElementById('setup-role').value.trim();
+  if (!name) { toast('enter your name'); return; }
+
+  let sig = null;
+  if (sigTabMode === 'draw') {
+    const hasDrawing = drawingPad.strokes.some(stroke => stroke.length);
+    if (hasDrawing) {
+      sig = {
+        kind: 'vector',
+        strokes: JSON.parse(JSON.stringify(drawingPad.strokes)),
+        width: document.getElementById('draw-pad').width,
+        height: document.getElementById('draw-pad').height,
+        lineWidth: 2,
+        color: '#0F0D0B',
+      };
+    }
+  } else {
+    const prev = document.getElementById('sig-preview');
+    if (prev.src && prev.src !== window.location.href) sig = prev.src;
+  }
+
+  if (!sig) {
+    const existing = setupEditingIndex !== null ? team[setupEditingIndex]?.sig : null;
+    if (!existing) { toast('draw or upload a signature'); return; }
+    sig = existing;
+  }
+
+  const person = { name, role, sig };
+  if (setupEditingIndex !== null) {
+    team[setupEditingIndex] = person;
+  } else {
+    team.push(person);
+  }
+  localStorage.setItem('cicely_sign_team', JSON.stringify(team));
+  renderTeam();
+  toast(`${name} saved ✓`);
+  goTo('who');
+}
+
+// ── DRAG & DROP ──
+function handleDragOver(e) { e.preventDefault(); document.getElementById('drop-zone').classList.add('drag-over'); }
+function handleDragLeave() { document.getElementById('drop-zone').classList.remove('drag-over'); }
+function handleDrop(e) {
+  e.preventDefault();
+  document.getElementById('drop-zone').classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type === 'application/pdf') loadPDF(file);
+  else toast('please drop a PDF file');
+}
+function handlePDFUpload(e) { const f = e.target.files[0]; if (f) loadPDF(f); }
+
+// ── PDF LOAD ──
+async function loadPDF(file) {
+  pdfName = file.name;
+  document.getElementById('doc-name-bar').textContent = pdfName;
+  pdfBytes = await file.arrayBuffer();
+  placedFields = [];
+
+  const viewport = document.getElementById('doc-viewport');
+  viewport.innerHTML = `<div style="font-size:13px;color:var(--ink-light);padding:40px 0;">rendering pages…</div>`;
+
+  const loadingTask = pdfjsLib.getDocument({ data: pdfBytes.slice(0) });
+  pdfDoc = await loadingTask.promise;
+
+  viewport.innerHTML = '';
+  for (let i = 1; i <= pdfDoc.numPages; i++) {
+    await renderPage(i);
+  }
+
+  saveRecent(pdfName);
+  goTo('sign');
+}
+
+async function renderPage(pageNum) {
+  const page = await pdfDoc.getPage(pageNum);
+  const dpr = window.devicePixelRatio || 1;
+  const cssWidth = Math.min(window.innerWidth - 32, 600);
+  const baseScale = cssWidth / page.getViewport({ scale: 1 }).width;
+  const renderScale = baseScale * dpr;
+  const vp = page.getViewport({ scale: renderScale });
+  const cssHeight = vp.height / dpr;
+
+  const wrap = document.createElement('div');
+  wrap.className = 'page-wrap';
+  wrap.style.width = cssWidth + 'px';
+  wrap.style.height = cssHeight + 'px';
+  wrap.dataset.page = pageNum;
+  wrap.dataset.dpr = dpr;
+  wrap.onclick = onPageClick;
+
+  const canvas = document.createElement('canvas');
+  canvas.width = vp.width;
+  canvas.height = vp.height;
+  canvas.style.width = cssWidth + 'px';
+  canvas.style.height = cssHeight + 'px';
+  const ctx = canvas.getContext('2d');
+  await page.render({ canvasContext: ctx, viewport: vp }).promise;
+  wrap.appendChild(canvas);
+
+  document.getElementById('doc-viewport').appendChild(wrap);
+}
+
+// ── TOOL SELECTION ──
+function setTool(t) {
+  currentTool = t;
+  ['sig','date','name'].forEach(id => {
+    document.getElementById('tool-' + id).classList.toggle('active', id === t);
+  });
+}
+
+
+// ── PLACE FIELDS ──
+function onPageClick(e) {
+  if (e.target.closest('.placed-field')) return;
+  const wrap = e.currentTarget;
+  const rect = wrap.getBoundingClientRect();
+  const x = e.clientX - rect.left;
+  const y = e.clientY - rect.top;
+  const pageNum = parseInt(wrap.dataset.page);
+  placeField(wrap, pageNum, x, y, currentTool);
+}
+
+const FIELD_COLORS = ['#0F0D0B','#C4623A','#7A9E7E','#C9A84C','#6B7FD7','#A855A0'];
+
+function placeField(wrap, pageNum, x, y, type) {
+  const id = Date.now() + Math.random();
+  const el = document.createElement('div');
+  el.className = `placed-field type-${type}`;
+  el.dataset.id = id;
+  el.dataset.color = '#0F0D0B';
+  el.style.left = (x - 10) + 'px';
+  el.style.top = (y - 16) + 'px';
+
+  const inner = document.createElement('div');
+  inner.className = 'field-inner';
+
+  if (type === 'sig') {
+    el.style.width = '130px';
+    el.style.height = '44px';
+    if (currentUser && currentUser.sig) {
+      const img = document.createElement('img');
+      img.src = signatureToPreviewUrl(currentUser.sig);
+      img.className = 'field-sig-img';
+      inner.appendChild(img);
+    } else {
+      inner.textContent = 'signature';
+      inner.style.color = '#0F0D0B';
+    }
+  } else if (type === 'date') {
+    el.style.width = '120px';
+    el.style.height = '32px';
+    const span = document.createElement('span');
+    span.className = 'field-text-editable';
+    span.style.color = '#0F0D0B';
+    span.style.fontSize = '13px';
+    span.contentEditable = 'true';
+    span.textContent = formatDate(new Date());
+    span.onmousedown = e => e.stopPropagation();
+    span.ontouchstart = e => e.stopPropagation();
+    inner.appendChild(span);
+  } else if (type === 'name') {
+    el.style.width = '140px';
+    el.style.height = '32px';
+    const span = document.createElement('span');
+    span.className = 'field-text-editable';
+    span.style.color = '#0F0D0B';
+    span.style.fontSize = '13px';
+    span.contentEditable = 'true';
+    span.textContent = currentUser ? currentUser.name : 'full name';
+    span.onmousedown = e => e.stopPropagation();
+    span.ontouchstart = e => e.stopPropagation();
+    inner.appendChild(span);
+  }
+
+  // delete btn
+  const del = document.createElement('button');
+  del.className = 'del-btn';
+  del.textContent = '×';
+  del.onclick = (e) => { e.stopPropagation(); el.remove(); placedFields = placedFields.filter(f => f.id !== id); };
+
+  // color picker btn
+  const colorBtn = document.createElement('div');
+  colorBtn.className = 'field-color-btn';
+  colorBtn.title = 'colour';
+  colorBtn.innerHTML = '<svg width="9" height="9" viewBox="0 0 9 9"><circle cx="4.5" cy="4.5" r="4" fill="currentColor"/></svg>';
+  colorBtn.onclick = (e) => { e.stopPropagation(); toggleColorPicker(el, colorBtn); };
+
+  // resize handle
+  const resizeHandle = document.createElement('div');
+  resizeHandle.className = 'resize-handle';
+  makeResizable(el, resizeHandle);
+
+  el.appendChild(inner);
+  el.appendChild(del);
+  el.appendChild(colorBtn);
+  el.appendChild(resizeHandle);
+  wrap.appendChild(el);
+
+  makeDraggable(el);
+
+  placedFields.push({ id, page: pageNum, el, type, wrap });
+}
+
+function toggleColorPicker(el, btn) {
+  // remove existing picker
+  const existing = el.querySelector('.color-picker-pop');
+  if (existing) { existing.remove(); return; }
+  const pop = document.createElement('div');
+  pop.className = 'color-picker-pop';
+  FIELD_COLORS.forEach(hex => {
+    const sw = document.createElement('div');
+    sw.className = 'color-swatch';
+    sw.style.background = hex;
+    sw.onclick = (e) => {
+      e.stopPropagation();
+      applyFieldColor(el, hex);
+      pop.remove();
+    };
+    pop.appendChild(sw);
+  });
+  el.appendChild(pop);
+  setTimeout(() => document.addEventListener('click', () => pop.remove(), { once: true }), 10);
+}
+
+function applyFieldColor(el, hex) {
+  el.dataset.color = hex;
+  const span = el.querySelector('.field-text-editable');
+  if (span) span.style.color = hex;
+  const img = el.querySelector('.field-sig-img');
+  if (!img) {
+    const inner = el.querySelector('.field-inner');
+    if (inner) inner.style.color = hex;
+  }
+  // update border color to match
+  const inner = el.querySelector('.field-inner');
+  if (inner) inner.style.borderColor = hex + '99';
+}
+
+function makeResizable(el, handle) {
+  let startX, startY, startW, startH;
+  function start(e) {
+    e.stopPropagation();
+    e.preventDefault();
+    const src = e.touches ? e.touches[0] : e;
+    startX = src.clientX;
+    startY = src.clientY;
+    startW = el.getBoundingClientRect().width;
+    startH = el.getBoundingClientRect().height;
+    document.addEventListener('mousemove', move);
+    document.addEventListener('touchmove', move, { passive: false });
+    document.addEventListener('mouseup', end);
+    document.addEventListener('touchend', end);
+  }
+  function move(e) {
+    e.preventDefault();
+    const src = e.touches ? e.touches[0] : e;
+    const newW = Math.max(50, startW + src.clientX - startX);
+    const newH = Math.max(24, startH + src.clientY - startY);
+    el.style.width = newW + 'px';
+    el.style.height = newH + 'px';
+    // scale font size proportionally for text fields
+    const span = el.querySelector('.field-text-editable');
+    if (span) span.style.fontSize = Math.max(8, Math.min(newH * 0.55, 32)) + 'px';
+  }
+  function end() {
+    document.removeEventListener('mousemove', move);
+    document.removeEventListener('touchmove', move);
+    document.removeEventListener('mouseup', end);
+    document.removeEventListener('touchend', end);
+  }
+  handle.addEventListener('mousedown', start);
+  handle.addEventListener('touchstart', start, { passive: false });
+}
+
+function makeDraggable(el) {
+  let startX, startY, origLeft, origTop, didMove;
+  function start(e) {
+    if (e.target.classList.contains('del-btn')) return;
+    if (e.target.classList.contains('field-color-btn')) return;
+    if (e.target.classList.contains('resize-handle')) return;
+    if (e.target.classList.contains('field-text-editable')) return;
+    e.preventDefault();
+    didMove = false;
+    const src = e.touches ? e.touches[0] : e;
+    startX = src.clientX; startY = src.clientY;
+    origLeft = parseInt(el.style.left) || 0;
+    origTop = parseInt(el.style.top) || 0;
+    document.onmousemove = document.ontouchmove = move;
+    document.onmouseup = document.ontouchend = end;
+  }
+  function move(e) {
+    didMove = true;
+    const src = e.touches ? e.touches[0] : e;
+    el.style.left = (origLeft + src.clientX - startX) + 'px';
+    el.style.top = (origTop + src.clientY - startY) + 'px';
+  }
+  function end() { document.onmousemove = document.ontouchmove = document.onmouseup = document.ontouchend = null; }
+  el.onmousedown = el.ontouchstart = start;
+}
+
+function formatDate(d) {
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mm = String(d.getMonth()+1).padStart(2,'0');
+  const yyyy = d.getFullYear();
+  return `${dd}/${mm}/${yyyy}`;
+}
+
+// ── FINISH & EMBED ──
+async function finishSigning() {
+  if (placedFields.length === 0) { toast('place at least one field first'); return; }
+  try {
+    toast('embedding fields…');
+    const { PDFDocument, rgb } = PDFLib;
+    const doc = await PDFDocument.load(pdfBytes);
+
+    for (const field of placedFields) {
+      const page = doc.getPage(field.page - 1);
+      const wrap = field.wrap;
+      const wrapRect = wrap.getBoundingClientRect();
+      const el = field.el;
+      const elRect = el.getBoundingClientRect();
+
+      const pdfW = page.getWidth();
+      const pdfH = page.getHeight();
+
+      // Use getBoundingClientRect consistently — all values are CSS pixels
+      const cssWrapW = wrapRect.width;
+      const cssWrapH = wrapRect.height;
+      const scaleX = pdfW / cssWrapW;
+      const scaleY = pdfH / cssWrapH;
+
+      // Position relative to wrap, in CSS pixels, then scale to PDF space
+      const relX = elRect.left - wrapRect.left;
+      const relY = elRect.top - wrapRect.top;
+      const cssElW = elRect.width;
+      const cssElH = elRect.height;
+
+      const pdfX = relX * scaleX;
+      // PDF y=0 is bottom-left, so flip
+      const pdfY = pdfH - (relY * scaleY) - (cssElH * scaleY);
+
+      if (field.type === 'sig' && currentUser && currentUser.sig) {
+        const boxW = cssElW * scaleX;
+        const boxH = cssElH * scaleY;
+        if (isVectorSignature(currentUser.sig)) {
+          drawVectorSignatureOnPdf(page, currentUser.sig, pdfX, pdfY, boxW, boxH);
+        } else {
+          const imgData = currentUser.sig;
+          let embeddedImg;
+          if (imgData.includes('image/png')) {
+            const base64 = imgData.split(',')[1];
+            const imgBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+            embeddedImg = await doc.embedPng(imgBytes);
+          } else {
+            const base64 = imgData.split(',')[1];
+            const imgBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+            embeddedImg = await doc.embedJpg(imgBytes);
+          }
+          // Maintain signature aspect ratio — scale to fit within field box
+          const sigDims = embeddedImg.scale(1);
+          const sigAspect = sigDims.width / sigDims.height;
+          let drawW = boxW;
+          let drawH = boxW / sigAspect;
+          if (drawH > boxH) { drawH = boxH; drawW = boxH * sigAspect; }
+          // Centre within the field box
+          const offsetX = (boxW - drawW) / 2;
+          const offsetY = (boxH - drawH) / 2;
+          page.drawImage(embeddedImg, {
+            x: pdfX + offsetX,
+            y: pdfY + offsetY,
+            width: drawW,
+            height: drawH,
+          });
+        }
+
+      } else if (field.type === 'date' || field.type === 'name') {
+        const span = field.el.querySelector('.field-text-editable');
+        const txt = span ? span.textContent.trim() : (field.type === 'date' ? formatDate(new Date()) : (currentUser ? currentUser.name : 'Signer'));
+        const hexColor = field.el.dataset.color || '#0F0D0B';
+        const r = parseInt(hexColor.slice(1,3),16)/255;
+        const g = parseInt(hexColor.slice(3,5),16)/255;
+        const b = parseInt(hexColor.slice(5,7),16)/255;
+        // Font size based on field height in PDF space, capped sensibly
+        const fontSize = Math.max(7, Math.min(cssElH * scaleY * 0.6, 28));
+        page.drawText(txt, { x: pdfX + 4, y: pdfY + (cssElH * scaleY * 0.2), size: fontSize, color: rgb(r,g,b) });
+      }
+    }
+
+    signedPdfBytes = await doc.save();
+    document.getElementById('done-sub').textContent =
+      `${currentUser ? currentUser.name : 'Document'} signed on ${formatDate(new Date())} — ready to download.`;
+    goTo('done');
+  } catch (err) {
+    console.error(err);
+    toast('error embedding — check console');
+  }
+}
+
+function downloadSigned() {
+  if (!signedPdfBytes) { toast('nothing to download yet'); return; }
+  const blob = new Blob([signedPdfBytes], { type: 'application/pdf' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = pdfName.replace('.pdf', '') + '_signed.pdf';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function signAnother() {
+  signedPdfBytes = null;
+  placedFields = [];
+  resetNotifyButtons();
+  goTo('upload-doc');
+}
+
+function drawVectorSignatureOnPdf(page, sig, boxX, boxY, boxW, boxH) {
+  const allPoints = sig.strokes.flat();
+  if (!allPoints.length) return;
+
+  const minX = Math.min(...allPoints.map(point => point.x));
+  const maxX = Math.max(...allPoints.map(point => point.x));
+  const minY = Math.min(...allPoints.map(point => point.y));
+  const maxY = Math.max(...allPoints.map(point => point.y));
+  const strokeWidth = sig.lineWidth || 2;
+  const sourceW = Math.max(maxX - minX, strokeWidth);
+  const sourceH = Math.max(maxY - minY, strokeWidth);
+  const scale = Math.min(boxW / sourceW, boxH / sourceH);
+  const drawW = sourceW * scale;
+  const drawH = sourceH * scale;
+  const offsetX = (boxW - drawW) / 2;
+  const offsetY = (boxH - drawH) / 2;
+
+  for (const stroke of sig.strokes) {
+    if (!stroke.length) continue;
+
+    if (stroke.length === 1) {
+      const point = stroke[0];
+      page.drawLine({
+        start: {
+          x: boxX + offsetX + ((point.x - minX) * scale),
+          y: boxY + offsetY + ((maxY - point.y) * scale),
+        },
+        end: {
+          x: boxX + offsetX + ((point.x - minX) * scale) + 0.01,
+          y: boxY + offsetY + ((maxY - point.y) * scale) + 0.01,
+        },
+        thickness: Math.max(1, strokeWidth * scale),
+      });
+      continue;
+    }
+
+    for (let i = 1; i < stroke.length; i++) {
+      const prev = stroke[i - 1];
+      const next = stroke[i];
+      page.drawLine({
+        start: {
+          x: boxX + offsetX + ((prev.x - minX) * scale),
+          y: boxY + offsetY + ((maxY - prev.y) * scale),
+        },
+        end: {
+          x: boxX + offsetX + ((next.x - minX) * scale),
+          y: boxY + offsetY + ((maxY - next.y) * scale),
+        },
+        thickness: Math.max(1, strokeWidth * scale),
+      });
+    }
+  }
+}
+
+// ── RECENT DOCS ──
+function saveRecent(name) {
+  let recent = JSON.parse(localStorage.getItem('cicely_sign_recent') || '[]');
+  recent = [{ name, date: new Date().toISOString() }, ...recent.filter(r => r.name !== name)].slice(0, 5);
+  localStorage.setItem('cicely_sign_recent', JSON.stringify(recent));
+}
+
+function renderRecent() {
+  const recent = JSON.parse(localStorage.getItem('cicely_sign_recent') || '[]');
+  const sec = document.getElementById('recent-section');
+  const list = document.getElementById('recent-list');
+  if (!recent.length) { sec.style.display = 'none'; return; }
+  sec.style.display = 'block';
+  list.innerHTML = recent.map(r => `
+    <div class="recent-item">
+      <div class="recent-icon">📄</div>
+      <div>
+        <div class="recent-name">${r.name}</div>
+        <div class="recent-date">${new Date(r.date).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'})}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ── MODAL ──
+function closeModal(e) { if (e.target === document.getElementById('modal-overlay')) document.getElementById('modal-overlay').classList.remove('open'); }
+
+// ── TOAST ──
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+// ── BACKEND SEND ──
+function uniqueEmails(list) {
+  return [...new Set(list.filter(Boolean).map(email => email.trim().toLowerCase()))];
+}
+
+function getRecipientConfig(targetKey) {
+  const group = DELIVERY_GROUPS[targetKey];
+  return {
+    label: group?.label || targetKey,
+    emails: uniqueEmails(group?.emails || []),
+  };
+}
+
+function updateNotifySummary() {
+  const desc = document.getElementById('notify-desc');
+  if (!desc) return;
+  const hello = getRecipientConfig('helloApp').emails.join(', ') || 'not set';
+  desc.innerHTML = `Sends the signed PDF to <strong>${hello}</strong> so the Cicely team has the completed document on file.`;
+}
+
+function resetNotifyButtons() {
+  document.querySelectorAll('[data-send-target]').forEach(btn => {
+    const original = btn.dataset.sendTarget === 'helloApp' ? 'send to hello@withcicely.com' : btn.textContent;
+    btn.disabled = false;
+    btn.textContent = original;
+  });
+  const status = document.getElementById('notify-status');
+  status.className = 'notify-status';
+  status.textContent = '';
+}
+
+function setButtonsDisabled(disabled) {
+  document.querySelectorAll('[data-send-target]').forEach(btn => {
+    btn.disabled = disabled;
+  });
+}
+
+async function arrayBufferToBase64(buffer) {
+  const bytes = new Uint8Array(buffer);
+  const chunkSize = 0x8000;
+  let binary = '';
+  for (let i = 0; i < bytes.length; i += chunkSize) {
+    const chunk = bytes.subarray(i, i + chunkSize);
+    binary += String.fromCharCode(...chunk);
+  }
+  return btoa(binary);
+}
+
+async function sendSignedPackage(targetKey, buttonEl) {
+  const status = document.getElementById('notify-status');
+  const originalLabel = buttonEl.textContent;
+  const recipientConfig = getRecipientConfig(targetKey);
+
+  if (!signedPdfBytes) {
+    toast('sign the PDF first');
+    return;
+  }
+
+  if (!recipientConfig.emails.length) {
+    status.className = 'notify-status err';
+    status.textContent = `no recipients set for ${recipientConfig.label}`;
+    return;
+  }
+
+  setButtonsDisabled(true);
+  buttonEl.textContent = 'sending…';
+  status.className = 'notify-status';
+  status.textContent = '';
+
+  const signerName = currentUser ? currentUser.name : 'unknown';
+  const signerRole = currentUser?.role || 'team';
+  const docName = pdfName || 'document';
+  const signDate = formatDate(new Date());
+  const signedPdfBase64 = await arrayBufferToBase64(signedPdfBytes);
+
+  try {
+    const response = await fetch(`${SUPABASE_URL}/functions/v1/${SIGN_BACKEND_FUNCTION}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        recipients: recipientConfig.emails,
+        recipientLabel: recipientConfig.label,
+        signerName,
+        signerRole,
+        docName,
+        signDate,
+        signedPdfBase64,
+      }),
+    });
+
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(result.error || 'Unable to send signed PDF');
+    }
+
+    buttonEl.textContent = 'sent ✓';
+    status.className = 'notify-status ok';
+    status.textContent = `signed PDF sent to ${recipientConfig.emails.join(', ')}`;
+  } catch (err) {
+    console.error(err);
+    buttonEl.textContent = originalLabel;
+    status.className = 'notify-status err';
+    status.textContent = err.message || 'failed to send signed PDF';
+  } finally {
+    document.querySelectorAll('[data-send-target]').forEach(btn => {
+      if (btn !== buttonEl || buttonEl.textContent !== 'sent ✓') {
+        btn.disabled = false;
+      }
+    });
+  }
+}
+
+// ── INIT ──
+renderTeam();
+document.addEventListener('DOMContentLoaded', () => { initDrawPad(); });
+setTimeout(initDrawPad, 200);
+updateNotifySummary();
+</script>
+</body>
+</html>
