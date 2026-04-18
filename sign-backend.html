@@ -98,7 +98,7 @@ body{font-family:'Geist',sans-serif;background:var(--paper);color:var(--ink);min
 .placed-field .del-btn{position:absolute;top:-8px;right:-8px;width:18px;height:18px;background:var(--ink);color:white;border-radius:50%;font-size:10px;display:none;align-items:center;justify-content:center;cursor:pointer;line-height:1;border:none;z-index:2;}
 .placed-field:hover .del-btn,.placed-field.selected .del-btn{display:flex;}
 .field-sig-img{width:100%;height:100%;object-fit:contain;display:block;position:absolute;inset:0;}
-.resize-handle{position:absolute;bottom:-6px;right:-6px;width:14px;height:14px;background:var(--ink);border-radius:50%;cursor:se-resize;display:none;z-index:5;touch-action:none;}
+.resize-handle{position:absolute;bottom:-8px;right:-8px;width:20px;height:20px;background:var(--ink);border-radius:50%;cursor:se-resize;display:none;z-index:5;touch-action:none;}
 .placed-field:hover .resize-handle,.placed-field.selected .resize-handle{display:block;}
 .field-color-btn{position:absolute;top:-8px;left:-8px;width:18px;height:18px;background:var(--card);border:1.5px solid var(--paper-mid);border-radius:50%;font-size:9px;display:none;align-items:center;justify-content:center;cursor:pointer;line-height:1;z-index:2;}
 .placed-field:hover .field-color-btn,.placed-field.selected .field-color-btn{display:flex;}
@@ -381,11 +381,14 @@ function openSetupFlow(editIndex = null) {
   clearPad();
   document.getElementById('sig-preview').style.display = 'none';
   document.getElementById('sig-preview').src = '';
-  initDrawPad();
-  if (p && p.sig) {
-    loadSignatureIntoSetup(p.sig);
-  }
   goTo('setup');
+  // Defer canvas init so the screen is visible and offsetWidth is correct
+  requestAnimationFrame(() => {
+    initDrawPad();
+    if (p && p.sig) {
+      loadSignatureIntoSetup(p.sig);
+    }
+  });
 }
 
 function switchSigTab(tab) {
@@ -887,7 +890,7 @@ async function finishSigning() {
         const boxW = cssElW * scaleX;
         const boxH = cssElH * scaleY;
         if (isVectorSignature(currentUser.sig)) {
-          drawVectorSignatureOnPdf(page, currentUser.sig, pdfX, pdfY, boxW, boxH);
+          await drawVectorSignatureOnPdf(doc, page, currentUser.sig, pdfX, pdfY, boxW, boxH);
         } else {
           const imgData = currentUser.sig;
           let embeddedImg;
@@ -958,58 +961,62 @@ function signAnother() {
   goTo('upload-doc');
 }
 
-function drawVectorSignatureOnPdf(page, sig, boxX, boxY, boxW, boxH) {
+async function drawVectorSignatureOnPdf(doc, page, sig, boxX, boxY, boxW, boxH) {
   const allPoints = sig.strokes.flat();
   if (!allPoints.length) return;
 
-  const minX = Math.min(...allPoints.map(point => point.x));
-  const maxX = Math.max(...allPoints.map(point => point.x));
-  const minY = Math.min(...allPoints.map(point => point.y));
-  const maxY = Math.max(...allPoints.map(point => point.y));
+  // Render at 3x for sharpness in the PDF
+  const HI = 3;
+  const canvasW = Math.max(1, Math.round(boxW * HI));
+  const canvasH = Math.max(1, Math.round(boxH * HI));
+
+  const offscreen = document.createElement('canvas');
+  offscreen.width = canvasW;
+  offscreen.height = canvasH;
+  const ctx = offscreen.getContext('2d');
+
+  const minX = Math.min(...allPoints.map(p => p.x));
+  const maxX = Math.max(...allPoints.map(p => p.x));
+  const minY = Math.min(...allPoints.map(p => p.y));
+  const maxY = Math.max(...allPoints.map(p => p.y));
   const strokeWidth = sig.lineWidth || 2;
   const sourceW = Math.max(maxX - minX, strokeWidth);
   const sourceH = Math.max(maxY - minY, strokeWidth);
-  const scale = Math.min(boxW / sourceW, boxH / sourceH);
-  const drawW = sourceW * scale;
-  const drawH = sourceH * scale;
-  const offsetX = (boxW - drawW) / 2;
-  const offsetY = (boxH - drawH) / 2;
+
+  const pad = strokeWidth * HI;
+  const fitScale = Math.min((canvasW - pad * 2) / sourceW, (canvasH - pad * 2) / sourceH);
+  const drawW = sourceW * fitScale;
+  const drawH = sourceH * fitScale;
+  const offX = (canvasW - drawW) / 2;
+  const offY = (canvasH - drawH) / 2;
+
+  ctx.strokeStyle = sig.color || '#0F0D0B';
+  ctx.fillStyle = sig.color || '#0F0D0B';
+  ctx.lineWidth = strokeWidth * fitScale;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
 
   for (const stroke of sig.strokes) {
     if (!stroke.length) continue;
-
     if (stroke.length === 1) {
-      const point = stroke[0];
-      page.drawLine({
-        start: {
-          x: boxX + offsetX + ((point.x - minX) * scale),
-          y: boxY + offsetY + ((maxY - point.y) * scale),
-        },
-        end: {
-          x: boxX + offsetX + ((point.x - minX) * scale) + 0.01,
-          y: boxY + offsetY + ((maxY - point.y) * scale) + 0.01,
-        },
-        thickness: Math.max(1, strokeWidth * scale),
-      });
+      ctx.beginPath();
+      ctx.arc(offX + (stroke[0].x - minX) * fitScale, offY + (stroke[0].y - minY) * fitScale, (strokeWidth * fitScale) / 2, 0, Math.PI * 2);
+      ctx.fill();
       continue;
     }
-
+    ctx.beginPath();
+    ctx.moveTo(offX + (stroke[0].x - minX) * fitScale, offY + (stroke[0].y - minY) * fitScale);
     for (let i = 1; i < stroke.length; i++) {
-      const prev = stroke[i - 1];
-      const next = stroke[i];
-      page.drawLine({
-        start: {
-          x: boxX + offsetX + ((prev.x - minX) * scale),
-          y: boxY + offsetY + ((maxY - prev.y) * scale),
-        },
-        end: {
-          x: boxX + offsetX + ((next.x - minX) * scale),
-          y: boxY + offsetY + ((maxY - next.y) * scale),
-        },
-        thickness: Math.max(1, strokeWidth * scale),
-      });
+      ctx.lineTo(offX + (stroke[i].x - minX) * fitScale, offY + (stroke[i].y - minY) * fitScale);
     }
+    ctx.stroke();
   }
+
+  const dataUrl = offscreen.toDataURL('image/png');
+  const base64 = dataUrl.split(',')[1];
+  const imgBytes = Uint8Array.from(atob(base64), c => c.charCodeAt(0));
+  const embeddedImg = await doc.embedPng(imgBytes);
+  page.drawImage(embeddedImg, { x: boxX, y: boxY, width: boxW, height: boxH });
 }
 
 // ── RECENT DOCS ──
